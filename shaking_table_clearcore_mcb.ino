@@ -94,11 +94,11 @@ void setup() {
 
     // open the file. note that only one file can be open at a time,
     // so you have to close this one before opening another.
-    myFile = SD.open("test.txt", FILE_WRITE);
+    myFile = SD.open("input.txt", FILE_WRITE);
 
     // If the file opened okay, write to it:
     if (myFile) {
-        Serial.print("Writing to test.txt...");
+        Serial.print("Writing to input.txt...");
         myFile.println("testing 1, 2, 3.");
         // Close the file:
         myFile.close();
@@ -106,16 +106,16 @@ void setup() {
     } 
     else {
         // If the file didn't open, print an error:
-        Serial.println("error opening test.txt");
+        Serial.println("error opening input.txt");
         while (true) {
             continue;
         }
     }
 
     // Re-open the file for reading:
-    myFile = SD.open("test.txt");
+    myFile = SD.open("input.txt");
     if (myFile) {
-        Serial.println("test.txt:");
+        Serial.println("input.txt:");
 
         // Read from the file until there's nothing else in it:
         while (myFile.available()) {
