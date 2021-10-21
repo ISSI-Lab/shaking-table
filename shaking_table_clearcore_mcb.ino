@@ -49,6 +49,8 @@
  */
 
 #include "ClearCore.h"
+#include <CSV_Parser.h>
+#include <Arduino_JSON.h>
 #include <SPI.h>
 #include <SD.h>
 
@@ -69,6 +71,8 @@ int accelerationLimit = 100000; // pulses per sec^2
 // the motor. The definition/implementation of this function is at the  bottom
 // of the example.
 void MoveDistance(int distance);
+
+const char input[] = "[true, 42, \"apple\"]";
 
 void setup() {
     // Put your setup code here, it will only run once:
@@ -134,6 +138,12 @@ void setup() {
 
    // ---- End of read/write code -----
 
+
+   // --- read config json file ----
+
+   demoParse();
+   // ---end of json reading
+ 
     // Sets the input clocking rate.
     MotorMgr.MotorInputClocking(MotorManager::CLOCK_RATE_NORMAL);
 
@@ -223,3 +233,42 @@ void MoveDistance(int distance) {
     Serial.println("Steps Complete");
 }
 //------------------------------------------------------------------------------
+
+
+void demoParse() {
+  Serial.println("parse");
+  Serial.println("=====");
+
+  JSONVar myArray = JSON.parse(input);
+
+  // JSON.typeof(jsonVar) can be used to get the type of the variable
+  if (JSON.typeof(myArray) == "undefined") {
+    Serial.println("Parsing input failed!");
+    return;
+  }
+
+  Serial.print("JSON.typeof(myArray) = ");
+  Serial.println(JSON.typeof(myArray)); // prints: array
+
+  // myArray.length() can be used to get the length of the array
+  Serial.print("myArray.length() = ");
+  Serial.println(myArray.length());
+  Serial.println();
+
+  Serial.print("JSON.typeof(myArray[0]) = ");
+  Serial.println(JSON.typeof(myArray[0]));
+
+  Serial.print("myArray[0] = ");
+  Serial.println(myArray[0]);
+  Serial.println();
+
+  Serial.print("myArray[1] = ");
+  Serial.println((int) myArray[1]);
+  Serial.println();
+
+  Serial.print("myArray[2] = ");
+  Serial.println((const char*) myArray[2]);
+  Serial.println();
+
+  Serial.println();
+}
