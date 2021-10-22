@@ -1,11 +1,11 @@
-# shaking_table_clearcore_mcb
+# Shaking Table Controller by Clearcore 
 
 Version: 00.00.01
 This is the clearcore arduino wrapper's shaking table codes.
 
 There are two input files: (1) a CSV file - for all the moving related value; (2) a JSON file for config the type of movement.
 
-Three types of movement:
+## Three types of movement:
 (1) Move based on the distances
 An example of input CSV file is as follows.
 
