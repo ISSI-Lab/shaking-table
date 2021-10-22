@@ -75,7 +75,7 @@ int accelerationLimit = 100000; // pulses per sec^2
 // of the example.
 void MoveDistance(int distance);
 
-char * csvStr = "";
+char csvStr[10000]; // we need to check the limitation later
 String jsonStr = "[true, 42, \"apple\"]";
 int moveMode = 0; //0: distance and 1: velocity and 2: acceleration
 
@@ -93,7 +93,7 @@ char Y_VELOCITY[] = "y_velocity";
 char X_ACCELERATION[] = "x_acceleration";
 char Y_ACCELERATION[] = "y_acceleration";
 char TIMESTAMP[] = "timestamp";
-
+char moveState = 0;
 
 void setup() {
     // Put your setup code here, it will only run once:
@@ -109,10 +109,14 @@ void setup() {
     initSD();
     initLogFile();
     readCSVFile();
+    Serial.print(csvStr);
+    delay(1000);
     CSV_Parser cp(csvStr, /*format*/ "Lff");
 
     numOfRecords = cp.getRowsCount();
-
+    Serial.println("number of record");
+    Serial.print(numOfRecords);
+    
     if (moveMode == 0) {
         xVals = (float*)cp[X_DISTANCE]; //This is used to save distance or velocity or acceleration at x-axis depends on mode
         yVals = (float*)cp[Y_DISTANCE];  //This is used to save distance or velocity or acceleration at y-axis depends on mode
@@ -143,9 +147,10 @@ void setup() {
 
     // Sets the maximum velocity for each move
     motorX.VelMax(velocityLimit);
-
+    motorY.VelMax(velocityLimit);
     // Set the maximum acceleration for each move
     motorX.AccelMax(accelerationLimit);
+    motorY.AccelMax(accelerationLimit);
 
     // Sets up serial communication and waits up to 5 seconds for a port to open.
     // Serial communication is not required for this example to run.
@@ -158,6 +163,7 @@ void setup() {
 
     // Enables the motor.
     motorX.EnableRequest(true);
+    motorY.EnableRequest(true);
 
     // Waits for HLFB to assert. Uncomment these lines if your motor has a 
     // "servo on" feature and it is wired to the HLFB line on the connector.
@@ -165,46 +171,40 @@ void setup() {
     //while (motor.HlfbState() != MotorDriver::HLFB_ASSERTED) {
     //    continue;
     //}
-    Serial.println("Motor Ready");
+    Serial.println("Motor X Ready");
+    Serial.println("Motor Y Ready");
 }
 
 void loop() {
+  
     // Put your main code here, it will run repeatedly:
-    if (moveMode == 0 ) {
-        for (int i = 0; i < numOfRecords; i++) {
-             Serial.print(longTimestamp[i]);             
-             Serial.print(" - ");
-             Serial.print(xVals[i]);          
-             Serial.print(" - ");
-             Serial.print(yVals[i]);           
-             Serial.print(" - ");
-             MoveXDistance(xVals[i]);
-             MoveXDistance(yVals[i]);
-             if (i+1 < numOfRecords) {
-                 delay(longTimestamp[i+1] - longTimestamp[i]);
-             }
+    if (moveMode == 0) {
+        if (moveState == 0) {
+            writeLog("movement state == start");
+            for (int i = 0; i < numOfRecords; i++) {
+                 Serial.print(longTimestamp[i]);             
+                 Serial.print(" - ");
+                 Serial.print(xVals[i]);          
+                 Serial.print(" - ");
+                 Serial.print(yVals[i]);           
+                 Serial.print(" - ");
+                 MoveXDistance(xVals[i]);
+                 MoveXDistance(yVals[i]);
+                 if (i+1 < numOfRecords) {
+                     delay(longTimestamp[i+1] - longTimestamp[i]);
+                 }
+            }
+            moveState = 1;
+        } else {
+            writeLog("movement state == finished");
         }
+
     } else if (moveMode == 1) {
       
     } else {
       
     }
 
-//    // Move 6400 counts (positive direction), then wait 2000ms
-//    MoveXDistance(6400);
-//    delay(2000);
-//    // Move 19200 counts farther positive, then wait 2000ms
-//    MoveXDistance(19200);
-//    delay(2000);
-//    // Move back 12800 counts (negative direction), then wait 2000ms
-//    MoveXDistance(-12800);
-//    delay(2000);
-//    // Move back 6400 counts (negative direction), then wait 2000ms
-//    MoveXDistance(-6400);
-//    delay(2000);
-//    // Move back to the start (negative 6400 pulses), then wait 2000ms
-//    MoveXDistance(-6400);
-//    delay(2000);
 }
 
 
@@ -266,10 +266,11 @@ void initSD() {
             continue;
         }
     }
-    Serial.println("initialization done.");
+    Serial.println("initialization SD done.");
 }
 
 void initLogFile() {
+    Serial.println("initialization Log File.");
     logFile = SD.open("info.log", FILE_WRITE);
 
     // If the file opened okay, write to it:
@@ -285,6 +286,7 @@ void initLogFile() {
             continue;
         }
     }
+    Serial.println("Done with initialization Log File.");
 }
 
 void readCSVFile() {
@@ -294,11 +296,20 @@ void readCSVFile() {
         //Serial.println();
         writeLog("Startiing to read the input.csv file");
 
+          // Rewind file so test data is not appended.
+        //inputCSVFile.seek(0);
+        char ltr;
+        int count = 0;
+
         // Read from the file until there's nothing else in it:
         while (inputCSVFile.available()) {
             //Serial.write(inputCSVFile.read());
-            char ltr = inputCSVFile.read();
-            csvStr += ltr;
+            ltr = inputCSVFile.read();
+            Serial.print(ltr);
+            csvStr[count] =  ltr;
+            count++;
+//            Serial.println("  --------");
+//            Serial.println(csvStr);
         }
         writeLog(csvStr);
         // Close the file:
