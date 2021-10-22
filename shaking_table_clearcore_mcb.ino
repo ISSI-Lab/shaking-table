@@ -53,6 +53,7 @@
 #include <Arduino_JSON.h>
 #include <SPI.h>
 #include <SD.h>
+#include <string.h>
 
 // Specifies which motor to move.
 // Options are: ConnectorM0, ConnectorM1, ConnectorM2, or ConnectorM3.
@@ -73,11 +74,21 @@ int accelerationLimit = 100000; // pulses per sec^2
 // Declares our user-defined helper function, which is used to command moves to
 // the motor. The definition/implementation of this function is at the  bottom
 // of the example.
-void MoveDistance(int distance);
+void MoveXDistance(int distance);
+void MoveYDistance(int distance);
+void initSD();
+void initLogFile();
+void readCSVFile();
+void readJSONFile();
+void writeLog(String logStr);
+void setConfig();
+
 
 char csvStr[10000]; // we need to check the limitation later
-String jsonStr = "[true, 42, \"apple\"]";
-int moveMode = 0; //0: distance and 1: velocity and 2: acceleration
+char jsonStr[1000];
+JSONVar jsonObject;
+int controlMode = 0; //0: distance and 1: velocity and 2: acceleration (default distance mode => 0)
+int moveMode = 0; //0: one time; 1: cycling (repeat) (default is one-time => 0)
 
 float *xVals; //This is used to save distance or velocity or acceleration at x-axis depends on mode
 float *yVals; //This is used to save distance or velocity or acceleration at y-axis depends on mode
@@ -111,25 +122,23 @@ void setup() {
     readCSVFile();
     Serial.print(csvStr);
     delay(1000);
-    CSV_Parser cp(csvStr, /*format*/ "Lff");
 
+    readJSONFile();
+    setConfig();
+    
+    CSV_Parser cp(csvStr, /*format*/ "Lff");
     numOfRecords = cp.getRowsCount();
     Serial.println("number of record");
     Serial.print(numOfRecords);
     
-    if (moveMode == 0) {
+    if (controlMode == 0) {
         xVals = (float*)cp[X_DISTANCE]; //This is used to save distance or velocity or acceleration at x-axis depends on mode
         yVals = (float*)cp[Y_DISTANCE];  //This is used to save distance or velocity or acceleration at y-axis depends on mode
         longTimestamp = (int32_t*)cp[TIMESTAMP];   
     }
 
-   // ---- End of read/write code -----
 
-
-   // --- read config json file ----
-
-   //demoParse();
-   // ---end of json reading
+    // ---end of json reading
  
     // Sets the input clocking rate.
     MotorMgr.MotorInputClocking(MotorManager::CLOCK_RATE_NORMAL);
@@ -178,7 +187,7 @@ void setup() {
 void loop() {
   
     // Put your main code here, it will run repeatedly:
-    if (moveMode == 0) {
+    if (controlMode == 0) {
         if (moveState == 0) {
             writeLog("movement state == start");
             for (int i = 0; i < numOfRecords; i++) {
@@ -199,7 +208,7 @@ void loop() {
             writeLog("movement state == finished");
         }
 
-    } else if (moveMode == 1) {
+    } else if (controlMode == 1) {
       
     } else {
       
@@ -271,11 +280,11 @@ void initSD() {
 
 void initLogFile() {
     Serial.println("initialization Log File.");
-    logFile = SD.open("info.log", FILE_WRITE);
+    logFile = SD.open("error.log", FILE_WRITE);
 
     // If the file opened okay, write to it:
     if (logFile) {
-        Serial.print("Starting to write the log...");
+        Serial.println("Starting to write the log...");
         logFile.println("Starting to write the log...");
         // Close the file:
         logFile.close();
@@ -308,8 +317,6 @@ void readCSVFile() {
             Serial.print(ltr);
             csvStr[count] =  ltr;
             count++;
-//            Serial.println("  --------");
-//            Serial.println(csvStr);
         }
         writeLog(csvStr);
         // Close the file:
@@ -317,7 +324,7 @@ void readCSVFile() {
     } 
     else {
         // If the file didn't open, print an error:
-        Serial.println("error opening test.txt");
+        Serial.println("ERROR: cannot opening input.csv");
     }
 }
 
@@ -335,40 +342,68 @@ void writeLog(String logStr) {
     }
 }
 
-void demoParse() {
-  Serial.println("parse");
-  Serial.println("=====");
+void readJSONFile() {
+    // Re-open the file for reading:
+    configFile = SD.open("config.json");
+    if (configFile) {
+        //Serial.println();
+        writeLog("Startiing to read the config.json file");
 
-  JSONVar myArray = JSON.parse(jsonStr);
+        char ltr;
+        int count = 0;
+
+        // Read from the file until there's nothing else in it:
+        while (configFile.available()) {
+            ltr = inputCSVFile.read();
+            Serial.print(ltr);
+            jsonStr[count] =  ltr;
+            count++;
+        }
+        writeLog(jsonStr);
+        // Close the file:
+        configFile.close();
+    } 
+    else {
+        // If the file didn't open, print an error:
+        Serial.println("error opening test.txt");
+    }
+}
+
+void setConfig() {
+  writeLog("starting to parse JSON file");
+  
+  jsonObject = JSON.parse(jsonStr);
 
   // JSON.typeof(jsonVar) can be used to get the type of the variable
-  if (JSON.typeof(myArray) == "undefined") {
-    Serial.println("Parsing input failed!");
-    return;
+  if (JSON.typeof(jsonObject) == "undefined") {
+      writeLog("starting to parse JSON file");
+      return;
   }
 
-  Serial.print("JSON.typeof(myArray) = ");
-  Serial.println(JSON.typeof(myArray)); // prints: array
+  if (jsonObject.hasOwnProperty("control_mode")) {
+      writeLog("INFO: Has control mode");
+      writeLog((const char*)jsonObject["control_mode"]);
+      //writeLog(("Control Mode is " + (const char*)jsonObject["control_mode"] );
 
-  // myArray.length() can be used to get the length of the array
-  Serial.print("myArray.length() = ");
-  Serial.println(myArray.length());
-  Serial.println();
+      if (strcmp((const char*)jsonObject["control_mode"], "distance") == 0) {
+          controlMode = 0;
+      } else if (strcmp((const char*)jsonObject["control_mode"], "velocity") == 0) {
+          controlMode = 1;
+      } else {
+          controlMode = 2;
+      }
+  }
 
-  Serial.print("JSON.typeof(myArray[0]) = ");
-  Serial.println(JSON.typeof(myArray[0]));
+  if (jsonObject.hasOwnProperty("move_mode")) {
+      writeLog("INFO: Has moving mode");
+      writeLog((const char*)jsonObject["move_mode"]);
+      //writeLog(("Control Mode is " + (const char*)jsonObject["move_mode"] );
 
-  Serial.print("myArray[0] = ");
-  Serial.println(myArray[0]);
-  Serial.println();
+      if (strcmp((const char*)jsonObject["move_mode"], "one") == 0) {
+          moveMode = 0;
+      } else if (strcmp((const char*)jsonObject["move_mode"], "cycle") == 0) {
+          moveMode = 1;
+      } 
+  }
 
-  Serial.print("myArray[1] = ");
-  Serial.println((int) myArray[1]);
-  Serial.println();
-
-  Serial.print("myArray[2] = ");
-  Serial.println((const char*) myArray[2]);
-  Serial.println();
-
-  Serial.println();
 }
