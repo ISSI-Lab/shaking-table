@@ -344,6 +344,7 @@ void writeLog(String logStr) {
 
 void readJSONFile() {
     // Re-open the file for reading:
+    Serial.println("reading config.sjon file");
     configFile = SD.open("config.json");
     if (configFile) {
         //Serial.println();
@@ -354,18 +355,19 @@ void readJSONFile() {
 
         // Read from the file until there's nothing else in it:
         while (configFile.available()) {
-            ltr = inputCSVFile.read();
+            ltr = configFile.read();
             Serial.print(ltr);
             jsonStr[count] =  ltr;
             count++;
         }
         writeLog(jsonStr);
+        delay(50000);
         // Close the file:
         configFile.close();
     } 
     else {
         // If the file didn't open, print an error:
-        Serial.println("error opening test.txt");
+        Serial.println("error opening config.json");
     }
 }
 
