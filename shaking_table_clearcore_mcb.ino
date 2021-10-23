@@ -64,6 +64,7 @@
 #define baudRate 9600
 
 File inputCSVFile;
+File configFile;
 File logFile;
 
 // Define the velocity and acceleration limits to be used for each move
@@ -135,6 +136,9 @@ void setup() {
         yVals = (float*)cp[Y_DISTANCE];  //This is used to save distance or velocity or acceleration at y-axis depends on mode
         longTimestamp = (int32_t*)cp[TIMESTAMP];   
     }
+
+
+    // ---end of json reading
  
     // Sets the input clocking rate.
     MotorMgr.MotorInputClocking(MotorManager::CLOCK_RATE_NORMAL);
@@ -340,18 +344,20 @@ void writeLog(String logStr) {
 
 void readJSONFile() {
     // Re-open the file for reading:
-    File configFile = SD.open("config.json");
+    configFile = SD.open("config.json");
     if (configFile) {
+        //Serial.println();
         writeLog("Startiing to read the config.json file");
-        char ch;
-        int cnt = 0;
+
+        char ltr;
+        int count = 0;
 
         // Read from the file until there's nothing else in it:
         while (configFile.available()) {
-            ch = configFile.read();
-            Serial.print(ch);
-            jsonStr[cnt] =  ch;
-            cnt++;
+            ltr = inputCSVFile.read();
+            Serial.print(ltr);
+            jsonStr[count] =  ltr;
+            count++;
         }
         writeLog(jsonStr);
         // Close the file:
