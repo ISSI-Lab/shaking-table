@@ -19,33 +19,12 @@
  * Links:
  * ** ClearCore Documentation: https://teknic-inc.github.io/ClearCore-library/
  * ** ClearCore Manual: https://www.teknic.com/files/downloads/clearcore_user_manual.pdf
+ * ** ClearPath Manual (DC Power): https://www.teknic.com/files/downloads/clearpath_user_manual.pdf
+ * ** ClearPath Manual (AC Power): https://www.teknic.com/files/downloads/ac_clearpath-mc-sd_manual.pdf
  *
  * Last Modified: 1/21/2020
  * Copyright (c) 2020 Teknic Inc. This work is free to use, copy and distribute under the terms of
  * the standard MIT permissive software license which can be found at https://opensource.org/licenses/MIT
- */
-
- /*
- * Title: ReadWrite
- *
- * Objective:
- *    This example demonstrates how to read from and write to a file on the
- *    SD card.
- *
- * Description:
- *    This example writes to a text file on the SD card then reads the file
- *    back to the USB serial port.
- *
- * Requirements:
- * ** A micro SD card installed in the ClearCore.
- *
- * Links:
- * ** ClearCore Documentation: https://teknic-inc.github.io/ClearCore-library/
- * ** ClearCore Manual: https://www.teknic.com/files/downloads/clearcore_user_manual.pdf
- *
- * Last Modified: 11/25/2020
- * This is a slightly modified version of the builtin Arduino SD ReadWrite sketch.
- * This example code is in the public domain. 
  */
 
 #include "ClearCore.h"
@@ -64,7 +43,6 @@
 #define baudRate 9600
 
 File inputCSVFile;
-File configFile;
 File logFile;
 
 // Define the velocity and acceleration limits to be used for each move
@@ -82,7 +60,7 @@ void readCSVFile();
 void readJSONFile();
 void writeLog(String logStr);
 void setConfig();
-
+bool MoveAtVelocity(int32_t velocity);
 
 char csvStr[10000]; // we need to check the limitation later
 char jsonStr[1000];
@@ -94,7 +72,6 @@ float *xVals; //This is used to save distance or velocity or acceleration at x-a
 float *yVals; //This is used to save distance or velocity or acceleration at y-axis depends on mode
 int32_t *longTimestamp;
 int numOfRecords = 0;
-
 
 //The headline string of the CSV file
 char X_DISTANCE[] = "x_distance";
@@ -153,10 +130,22 @@ void setup() {
     //motor.PolarityInvertSDEnable(true);
     //motor.PolarityInvertSDDirection(true);
     //motor.PolarityInvertSDHlfb(true);
-
-    // Sets the maximum velocity for each move
-    motorX.VelMax(velocityLimit);
-    motorY.VelMax(velocityLimit);
+    
+    if (controlMode == 0) {
+        // Sets the maximum velocity for each move
+        motorX.VelMax(velocityLimit);
+        motorY.VelMax(velocityLimit);
+    }
+    if (controlMode == 1) {
+        // Set the motor's HLFB mode to bipolar PWM
+        motorX.HlfbMode(MotorDriver::HLFB_MODE_HAS_BIPOLAR_PWM);
+        // Set the HFLB carrier frequency to 482 Hz
+        motorX.HlfbCarrier(MotorDriver::HLFB_CARRIER_482_HZ);
+        // Set the motor's HLFB mode to bipolar PWM
+        motorY.HlfbMode(MotorDriver::HLFB_MODE_HAS_BIPOLAR_PWM);
+        // Set the HFLB carrier frequency to 482 Hz
+        motorY.HlfbCarrier(MotorDriver::HLFB_CARRIER_482_HZ);
+    }
     // Set the maximum acceleration for each move
     motorX.AccelMax(accelerationLimit);
     motorY.AccelMax(accelerationLimit);
@@ -209,6 +198,21 @@ void loop() {
         }
 
     } else if (controlMode == 1) {
+        // Move at 1,000 steps/sec for 2000ms
+        MoveYAtVelocity(1000);
+        delay(2000);
+        // Move at -5,000 steps/sec for 2000ms
+        MoveYAtVelocity(-5000);
+        delay(2000);
+        // Move at 10,000 steps/sec for 2000ms
+        MoveYAtVelocity(10000);
+        delay(2000);
+        // Move at -10,000 steps/sec for 2000ms
+        MoveYAtVelocity(-10000);
+        delay(2000);
+        // Command a 0 steps/sec velocity to stop motion for 2000ms
+        MoveYAtVelocity(0);
+        delay(2000);
       
     } else {
       
@@ -263,6 +267,66 @@ void MoveYDistance(int distance) {
 }
 //------------------------------------------------------------------------------
 
+
+/*------------------------------------------------------------------------------
+ * MoveAtVelocity
+ *
+ *    Command the motor to move at the specified "velocity", in pulses/second.
+ *    Prints the move status to the USB serial port
+ *
+ * Parameters:
+ *    int velocity  - The velocity, in step pulses/sec, to command
+ *
+ * Returns: True/False depending on whether the move was successfully triggered.
+ */
+bool MoveXAtVelocity(int velocity) {
+    // Check if an alert is currently preventing motion
+    if (motorX.StatusReg().bit.AlertsPresent) {
+        Serial.println("Motor status: 'In Alert'. Move Canceled.");
+        return false;
+    }
+
+    Serial.print("Moving at velocity: ");
+    Serial.println(velocity);
+
+    // Command the velocity move
+    motorX.MoveVelocity(velocity);
+
+    // Waits for the step command to ramp up/down to the commanded velocity. 
+    // This time will depend on your Acceleration Limit.
+    Serial.println("Ramping to speed...");
+    while (!motorX.StatusReg().bit.AtTargetVelocity) {
+        continue;
+    }
+
+    Serial.println("At Speed");
+    return true; 
+}
+
+bool MoveYAtVelocity(int velocity) {
+    // Check if an alert is currently preventing motion
+    if (motorY.StatusReg().bit.AlertsPresent) {
+        Serial.println("Motor status: 'In Alert'. Move Canceled.");
+        return false;
+    }
+
+    Serial.print("Moving at velocity: ");
+    Serial.println(velocity);
+
+    // Command the velocity move
+    motorY.MoveVelocity(velocity);
+
+    // Waits for the step command to ramp up/down to the commanded velocity. 
+    // This time will depend on your Acceleration Limit.
+    Serial.println("Ramping to speed...");
+    while (!motorY.StatusReg().bit.AtTargetVelocity) {
+        continue;
+    }
+
+    Serial.println("At Speed");
+    return true; 
+}
+//------------------------------------------------------------------------------
 
 
 void initSD() {
@@ -345,20 +409,20 @@ void writeLog(String logStr) {
 void readJSONFile() {
     // Re-open the file for reading:
     Serial.println("reading config.sjon file");
-    configFile = SD.open("config.json");
+    File configFile = SD.open("config.json");
     if (configFile) {
         //Serial.println();
         writeLog("Startiing to read the config.json file");
 
-        char ltr;
-        int count = 0;
+        char ch;
+        int cnt = 0;
 
         // Read from the file until there's nothing else in it:
         while (configFile.available()) {
-            ltr = configFile.read();
-            Serial.print(ltr);
-            jsonStr[count] =  ltr;
-            count++;
+            ch = configFile.read();
+            Serial.print(ch);
+            jsonStr[cnt] =  ch;
+            cnt++;
         }
         writeLog(jsonStr);
         delay(50000);
