@@ -130,6 +130,8 @@ void setup() {
     //motor.PolarityInvertSDEnable(true);
     //motor.PolarityInvertSDDirection(true);
     //motor.PolarityInvertSDHlfb(true);
+   
+    //controlMode = 1;
     
     if (controlMode == 0) {
         // Sets the maximum velocity for each move
@@ -194,7 +196,7 @@ void loop() {
             }
             moveState = 1;
         } else {
-            writeLog("movement state == finished");
+            //writeLog("movement state == finished");
         }
 
     } else if (controlMode == 1) {
@@ -408,8 +410,8 @@ void writeLog(String logStr) {
 
 void readJSONFile() {
     // Re-open the file for reading:
-    Serial.println("reading config.sjon file");
-    File configFile = SD.open("config.json");
+    Serial.println("reading config.sjon file...");
+    File configFile = SD.open("config1.txt");
     if (configFile) {
         //Serial.println();
         writeLog("Startiing to read the config.json file");
@@ -425,7 +427,6 @@ void readJSONFile() {
             cnt++;
         }
         writeLog(jsonStr);
-        delay(50000);
         // Close the file:
         configFile.close();
     } 
@@ -442,7 +443,7 @@ void setConfig() {
 
   // JSON.typeof(jsonVar) can be used to get the type of the variable
   if (JSON.typeof(jsonObject) == "undefined") {
-      writeLog("starting to parse JSON file");
+      writeLog("infrginrd - starting to parse JSON file");
       return;
   }
 
