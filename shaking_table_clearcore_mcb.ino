@@ -57,14 +57,15 @@ void MoveYDistance(int distance);
 void initSD();
 void initLogFile();
 void readCSVFile();
-void readJSONFile();
+void readConfigFile();
 void writeLog(String logStr);
-void setConfig();
+void parseConfig(char cs[]);
 bool MoveAtVelocity(int32_t velocity);
 
 char csvStr[10000]; // we need to check the limitation later
-char jsonStr[1000];
-JSONVar jsonObject;
+char configStr[1000] = "ak=aval;bk=bval;ck=cval;";
+char configKeys[20][50];
+char configValues[20][50];
 int controlMode = 0; //0: distance and 1: velocity and 2: acceleration (default distance mode => 0)
 int moveMode = 0; //0: one time; 1: cycling (repeat) (default is one-time => 0)
 
@@ -84,8 +85,6 @@ char TIMESTAMP[] = "timestamp";
 char moveState = 0;
 
 void setup() {
-    // Put your setup code here, it will only run once:
-
    // ---- SD read write code ----
     // Open serial communications and wait for port to open:
     Serial.begin(9600);
@@ -100,8 +99,10 @@ void setup() {
     Serial.print(csvStr);
     delay(1000);
 
-    readJSONFile();
-    setConfig();
+    //setup config file and get config values
+    readConfigFile();
+    //configStr[100] = "akey=aval;bkey=bval;ckey=cval;";
+    parseConfig(configStr);
     
     CSV_Parser cp(csvStr, /*format*/ "Lff");
     numOfRecords = cp.getRowsCount();
@@ -112,10 +113,15 @@ void setup() {
         xVals = (float*)cp[X_DISTANCE]; //This is used to save distance or velocity or acceleration at x-axis depends on mode
         yVals = (float*)cp[Y_DISTANCE];  //This is used to save distance or velocity or acceleration at y-axis depends on mode
         longTimestamp = (int32_t*)cp[TIMESTAMP];   
+    } else if (controlMode == 1) {
+        xVals = (float*)cp[X_VELOCITY]; //This is used to save distance or velocity or acceleration at x-axis depends on mode
+        yVals = (float*)cp[Y_VELOCITY];  //This is used to save distance or velocity or acceleration at y-axis depends on mode
+        longTimestamp = (int32_t*)cp[TIMESTAMP];        
+    } else {
+        xVals = (float*)cp[X_ACCELERATION]; //This is used to save distance or velocity or acceleration at x-axis depends on mode
+        yVals = (float*)cp[Y_ACCELERATION];  //This is used to save distance or velocity or acceleration at y-axis depends on mode
+        longTimestamp = (int32_t*)cp[TIMESTAMP];        
     }
-
-
-    // ---end of json reading
  
     // Sets the input clocking rate.
     MotorMgr.MotorInputClocking(MotorManager::CLOCK_RATE_NORMAL);
@@ -408,7 +414,7 @@ void writeLog(String logStr) {
     }
 }
 
-void readJSONFile() {
+void readConfigFile() {
     // Re-open the file for reading:
     Serial.println("reading config.sjon file...");
     File configFile = SD.open("config1.txt");
@@ -423,10 +429,10 @@ void readJSONFile() {
         while (configFile.available()) {
             ch = configFile.read();
             Serial.print(ch);
-            jsonStr[cnt] =  ch;
+            configStr[cnt] =  ch;
             cnt++;
         }
-        writeLog(jsonStr);
+        writeLog(configStr);
         // Close the file:
         configFile.close();
     } 
@@ -436,41 +442,42 @@ void readJSONFile() {
     }
 }
 
-void setConfig() {
-  writeLog("starting to parse JSON file");
+void parseConfig(char cs[]) {
+    char tmpArr[20][50];
+    int j=0;
+    char tmpStr[50] = "";
+    int n = 0;
+    for (int i=0; i<strlen(cs); i++) {
+         if (cs[i] != ';') {
+             tmpStr[n] = cs[i];
+             n++;
+         } else {
+             strcpy(tmpArr[j], tmpStr);
+             j++;
+             n=0;
+        }
+    }
   
-  jsonObject = JSON.parse(jsonStr);
-
-  // JSON.typeof(jsonVar) can be used to get the type of the variable
-  if (JSON.typeof(jsonObject) == "undefined") {
-      writeLog("infrginrd - starting to parse JSON file");
-      return;
-  }
-
-  if (jsonObject.hasOwnProperty("control_mode")) {
-      writeLog("INFO: Has control mode");
-      writeLog((const char*)jsonObject["control_mode"]);
-      //writeLog(("Control Mode is " + (const char*)jsonObject["control_mode"] );
-
-      if (strcmp((const char*)jsonObject["control_mode"], "distance") == 0) {
-          controlMode = 0;
-      } else if (strcmp((const char*)jsonObject["control_mode"], "velocity") == 0) {
-          controlMode = 1;
-      } else {
-          controlMode = 2;
-      }
-  }
-
-  if (jsonObject.hasOwnProperty("move_mode")) {
-      writeLog("INFO: Has moving mode");
-      writeLog((const char*)jsonObject["move_mode"]);
-      //writeLog(("Control Mode is " + (const char*)jsonObject["move_mode"] );
-
-      if (strcmp((const char*)jsonObject["move_mode"], "one") == 0) {
-          moveMode = 0;
-      } else if (strcmp((const char*)jsonObject["move_mode"], "cycle") == 0) {
-          moveMode = 1;
-      } 
-  }
-
+    for (int k = 0; k<j; k++) {
+         int isValue = 0;
+         n = 0;
+         for (int m = 0; m<strlen(tmpArr[k]); m++) {
+              if (tmpArr[k][m] != '=') {
+                  if (isValue != 1) {
+                      configKeys[k][n] = tmpArr[k][m];
+                  } else {
+                      configValues[k][n] = tmpArr[k][m];
+                  }
+                  n++;
+              } else {
+                  isValue = 1;
+                  n = 0;
+              }
+          } 
+    }
+  
+    for (int k = 0; k<j; k++) {
+         Serial.println( configKeys[k] );
+         Serial.println( configValues[k] );
+    }
 }
