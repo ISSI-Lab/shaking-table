@@ -1,3 +1,8 @@
+# NOTE:
+
+Current status - this software can allow csv as the velocity and distance input and use a config file to determine which mode for control.
+Now, acceleration control is not implemented yet. This relies on the actual weight of the equipment.
+
 # Shaking Table Controller by Clearcore 
 
 Version: 00.00.01
