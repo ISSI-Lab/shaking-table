@@ -1,0 +1,11 @@
+nohup: ignoring input
+ * Serving Flask app "/home/admin/web/run.py" (lazy loading)
+ * Environment: development
+ * Debug mode: on
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 369-776-254
+192.168.0.107 - - [16/Jan/2023 19:56:59] "[37mGET / HTTP/1.1[0m" 200 -
+192.168.0.107 - - [16/Jan/2023 19:57:11] "[37mGET / HTTP/1.1[0m" 200 -
+192.168.0.107 - - [16/Jan/2023 19:57:11] "[37mGET / HTTP/1.1[0m" 200 -
