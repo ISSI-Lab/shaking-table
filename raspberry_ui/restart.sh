@@ -10,4 +10,5 @@ docker image rm $(docker images 'flask' -a -q | head -n 1)
 #after clean up, build the image called "flask"
 docker build -t flask .
 #run the container and expose the port 5000
-docker run -d -p 5000:5000 flask
+docker run -d -v"$PWD"/app/static:/app/static -v"$PWD"/app/templates:/app/templates -v"$PWD"/app/log:/app/log -p 5000:5000 flask
+docker container ls
