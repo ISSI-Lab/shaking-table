@@ -3,6 +3,17 @@
 Current status - this software can allow csv as the velocity and distance input and use a config file to determine which mode for control.
 Now, acceleration control is not implemented yet. This relies on the actual weight of the equipment.
 
+# Hardware
+User Interface (UI) control: Touch screen + Raspberry Pi
+Micro Controller Board (MCB) for motor: Clearcore
+
+# Functionalities
+1. Upload an input file from a drive and then click start to execute the motor motions.
+2. Direct input X and Y values to move motors
+3. Click the button to stop the movement
+4. Status check on MCB and show message on UI
+ 
+
 # Shaking Table Controller by Clearcore 
 
 Version: 00.00.01
