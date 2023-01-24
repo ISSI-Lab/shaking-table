@@ -7,7 +7,11 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 #RUN mkdir -p /app
 WORKDIR /app
 
+# use $PWD to link host and guest drives
 COPY app/app.py /app/
 COPY app/run_flask.sh /app/
+
+# copy everything
+#COPY app/* /app/
 
 CMD [ "./run_flask.sh"]

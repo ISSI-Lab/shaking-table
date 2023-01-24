@@ -17,7 +17,7 @@ def send_css(path):
     return send_from_directory('css', path)
 
 @app.route('/img/<path:path>')
-def send_js(path):
+def send_img(path):
     return send_from_directory('img', path)
 
 @app.route("/")
@@ -29,5 +29,5 @@ def home():
 
 
 
-# if __name__ == "__main__":
-#     app.run(host="0.0.0.0", debug=True, port=80)
+if __name__ == "__main__":
+	app.run(host="0.0.0.0", debug=True, port=5000)
