@@ -1,3 +1,18 @@
-.input-group {
-  display: inline;
+.close-btn {
+  position: absolute;
+  font-size: 24px;
+  font-weight: bold;
+  color: #ff2600;
+  top: 0px;
+  right: 0px;
+}
+
+#message_area {
+	position: relative;
+  border-style: solid;
+  border-color: gainsboro;
+  width: 300px;
+  padding: 10px;
+  background-color: ghostwhite;
+
 }
