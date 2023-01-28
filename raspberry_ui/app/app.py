@@ -13,14 +13,11 @@ app = Flask(__name__,
 
 afile_handle = AbstractFile()
 
-#app_root = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 app_root = afile_handle.get_app_root()
-#print(app_root , file=sys.stderr)
 upload_dir = afile_handle.get_upload_dir()
-#print(upload_dir , file=sys.stderr)
 
 ALLOWED_EXTENSIONS = {'csv', 'dat'}
-app.config['UPLOAD_FOLDER'] = app_root + '/data/uploads'
+upload_dir = app_root + '/data/uploads'
 
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -30,29 +27,12 @@ def get_file_time_key():
 
 def file_save(filename, content, path=""):
 	return afile_handle.file_save(filename, content, path)
- # if path == "":
- # 	path = app.config['UPLOAD_FOLDER']
- # fout = open(os.path.join(path, filename), "wt")
- # fout.write(content)
- # fout.close()
- # return 1
 
 def file_get_content(filename, path = ""):
 	return afile_handle.file_get_content(filename, path)
- # try:
- # 	if path == "":
- # 		path = app.config['UPLOAD_FOLDER']
- # 		f = open(os.path.join(path, filename), 'rt')
- # except OSError:
- # 	print("No such file!!", file=sys.stderr)
- # 	return ""
- #
- # content = f.read()
- # f.close()
- # return content
 
 def remove_time_key_file():
-	fp = os.path.join(app.config['UPLOAD_FOLDER'], "file_time_input.txt")
+	fp = os.path.join(upload_dir, "file_time_input.txt")
 	if os.path.isfile(fp):
 		os.remove(fp)
 
@@ -103,13 +83,11 @@ def upload_file():
 		if up_file:
    			if allowed_file(up_file.filename):
    				filename = secure_filename(up_file.filename)
-   				up_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+   				up_file.save(os.path.join(upload_dir, filename))
    				message_txt = 'Uploaded Successfully!'
    				return render_template('index.html', message=message_txt, file_time=get_file_time_key())
    			else:
-   				#print(str(up_file.filename), file=sys.stderr)
    				request.files['file'].filename = ""
-   				#print(str(request.files['file'].filename), file=sys.stderr)
    				message_txt = 'Wrong Type! Uploaded Unsuccessfully!'
    				return render_template('index.html', message=message_txt, file_time=get_file_time_key())
  				
