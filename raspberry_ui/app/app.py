@@ -5,6 +5,10 @@ from flask import Flask, render_template, request, send_from_directory, flash, u
 from werkzeug.utils import secure_filename
 
 from ulib.abstract_file import AbstractFile
+from ulib.input_validator import InputValidator
+from ulib.state_info import StateInfo
+
+from ulib.serial_com import SerialComThread
 
 app = Flask(__name__, 
 			static_url_path='', 
@@ -12,12 +16,16 @@ app = Flask(__name__,
 			template_folder='templates')
 
 afile_handle = AbstractFile()
+state_data = "INIT"
+state_obj = StateInfo(state_data)
+serial_thread = SerialComThread("Serial", 1000)
+
 
 app_root = afile_handle.get_app_root()
 upload_dir = afile_handle.get_upload_dir()
-
+upload_input_filename = os.path.join(upload_dir, "input_motor_move.csv")
 ALLOWED_EXTENSIONS = {'csv', 'dat'}
-upload_dir = app_root + '/data/uploads'
+#upload_dir = app_root + '/data/uploads'
 
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -39,6 +47,32 @@ def remove_time_key_file():
 @app.route("/")
 def home():
 	remove_time_key_file()
+	state_data = "INIT"
+	state_obj.saveState(state_data)
+	print(state_data, file=sys.stderr)
+	return render_template('index.html', state_info=state_data)
+
+@app.route("/start_serial")
+def start_serial_thread():
+	serial_thread.start()
+	state_data = "SERIAL_THREAD_STARTED"
+	state_obj.saveState(state_data)
+	print(state_data, file=sys.stderr)
+	return render_template('index.html', state_info=state_data)
+
+@app.route("/stop_serial")
+def stop_serial_thread():
+	if not serial_thread.stopped():
+		serial_thread.stop()
+		state_data = "SERIAL_THREAD_STOPPED"
+		state_obj.saveState(state_data)
+		print(state_data, file=sys.stderr)
+	return render_template('index.html', state_info=state_data)
+
+@app.route("/listen_serial")
+def set_serial_thread():
+	listenVal = request.args.get('listen')
+	serial_thread.setListen(listenVal)
 	return render_template('index.html')
 
 @app.route('/js/<path:path>')
@@ -83,9 +117,17 @@ def upload_file():
 		if up_file:
    			if allowed_file(up_file.filename):
    				filename = secure_filename(up_file.filename)
-   				up_file.save(os.path.join(upload_dir, filename))
-   				message_txt = 'Uploaded Successfully!'
-   				return render_template('index.html', message=message_txt, file_time=get_file_time_key())
+   				#up_file.save(os.path.join(upload_dir, filename))
+   				up_file.save(upload_input_filename)
+   				input_validator = InputValidator()
+   				if input_validator.validate(upload_input_filename):
+   					input_validator.reformat(upload_input_filename)
+   					message_txt = 'Uploaded Successfully!'
+   					return render_template('index.html', message=message_txt, file_time=get_file_time_key(), state_info="FILE_UPLOADED")
+   				else:
+   					#remove the file and show the error message
+   					message_txt = 'Invalid Input Data!! Uploaded Unsuccessfully!'
+   					return render_template('index.html', message=message_txt, file_time=get_file_time_key())    					
    			else:
    				request.files['file'].filename = ""
    				message_txt = 'Wrong Type! Uploaded Unsuccessfully!'

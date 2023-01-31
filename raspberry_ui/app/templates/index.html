@@ -15,7 +15,7 @@
 <div class="container">
 <div><h1 class="mb-3">Shaking Table</h1></div>
 
-<div id="message_area" class="h5" title="INFO" >
+<div id="message_area"  class="alert alert-warning" role="alert">
     {% if message is defined %}
         {{message}}
         <button id="msg-close-btn" class="close-btn">&times;</button>
@@ -23,6 +23,17 @@
     <div id="file_time">{{file_time}}</div>
 </div>
 
+<div id="state_info" class="alert alert-primary" role="alert" title="INFO" >
+    <span>State:</span> 
+    {% if state_info is defined %}
+        {{state_info}}
+    {% endif %}
+</div>
+
+<input id="start_move_btn_status" name="start_move_btn_status" type="hidden" value="disabled" />
+
+  <div class="row">
+    <div class="colx">
 <form id="file-upload-form" class="form-inline" action = "/uploader" method = "POST" enctype = "multipart/form-data">
 <div class="input-group mb-4">
   <div class="custom-file">
@@ -34,6 +45,13 @@
 </div>
 <input id="file_time_input" name="file_time_input" type="hidden" value="" />
 </form>
+    </div>
+    <div class="colx">
+<form id="startmove" class="form-inline" action = "/startmove" method = "GET" >
+<button id="btn-file-upload" type="submit" class="btn btn-primary mb-2" disabled=disabled>Start Move</button>
+</form>
+    </div>
+  </div>
 
 <form class="form-inline" action="/motion_start">
 <div class="input-group mb-3">
@@ -43,7 +61,7 @@
   <label for="pwd" class="mr-sm-2">Y:</label>
   <input type="password" class="form-control mb-2 mr-sm-2" placeholder="Enter Y value" id="y-value">
 
-  <button type="submit" class="btn btn-primary mb-2">Start</button>
+  <button type="submit" class="btn btn-primary mb-2">Direct Move</button>
 </div>
 </form>
 </div>
