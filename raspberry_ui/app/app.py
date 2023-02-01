@@ -23,6 +23,7 @@ serial_thread = SerialComThread("Serial", 1000)
 
 app_root = afile_handle.get_app_root()
 upload_dir = afile_handle.get_upload_dir()
+data_dir = afile_handle.get_data_dir()
 upload_input_filename = os.path.join(upload_dir, "input_motor_move.csv")
 ALLOWED_EXTENSIONS = {'csv', 'dat'}
 #upload_dir = app_root + '/data/uploads'
@@ -52,13 +53,35 @@ def home():
 	print(state_data, file=sys.stderr)
 	return render_template('index.html', state_info=state_data)
 
+@app.route("/detectinput")
+def detect_input_file():
+	return render_template('index.html', btn_move=100)
+
 @app.route("/start_serial")
 def start_serial_thread():
-	serial_thread.start()
-	state_data = "SERIAL_THREAD_STARTED"
-	state_obj.saveState(state_data)
-	print(state_data, file=sys.stderr)
-	return render_template('index.html', state_info=state_data)
+	check_file = os.path.join(data_dir, "serial_state.cfg")
+	if not os.path.isfile(check_file):
+		serial_thread.start()
+	else:
+		serial_state = "SERIAL_NOT_STARTED_AGAIN"
+		state_obj.saveState(serial_state)
+		print(serial_state, file=sys.stderr)
+		return render_template('index.html', state_info=serial_state)
+	
+	serial_status = ""
+	count = 0
+	while serial_status == "" or timeout > 1.5:
+		time.sleep(0.1)
+		count = count + 1
+		timeout = 0.1*count
+		serial_status = afile_handle.file_get_content("serial_state.cfg", afile_handle.get_data_dir(), "rt")
+	
+	#serial_status = afile_handle.file_get_content("serial_state.cfg", afile_handle.get_data_dir(), "rt")
+	print(">>>>" + serial_status, file=sys.stderr)
+
+	state_obj.saveState(serial_status)
+	print(serial_status, file=sys.stderr)
+	return render_template('index.html', state_info=serial_status)
 
 @app.route("/stop_serial")
 def stop_serial_thread():

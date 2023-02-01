@@ -30,7 +30,11 @@
     {% endif %}
 </div>
 
-<input id="start_move_btn_status" name="start_move_btn_status" type="hidden" value="disabled" />
+<div id="start_move_btn_status" name="start_move_btn_status" style="display: none;">
+    {% if btn_move is defined %}
+        {{btn_move}}
+    {% endif %}
+</div>
 
   <div class="row">
     <div class="colx">
@@ -46,9 +50,14 @@
 <input id="file_time_input" name="file_time_input" type="hidden" value="" />
 </form>
     </div>
+<div class="colx">
+<form id="detectinput" class="form-inline" action = "/detectinput" method = "GET" >
+<button id="btn-file-upload" type="submit" class="btn btn-primary mb-2" >Detect Input</button>
+</form>
+    </div>
     <div class="colx">
 <form id="startmove" class="form-inline" action = "/startmove" method = "GET" >
-<button id="btn-file-upload" type="submit" class="btn btn-primary mb-2" disabled=disabled>Start Move</button>
+<button id="btn-start-move" type="submit" class="btn btn-primary mb-2" disabled=disabled>Start Move</button>
 </form>
     </div>
   </div>

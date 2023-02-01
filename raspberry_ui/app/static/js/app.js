@@ -18,6 +18,11 @@ $( function() {
 	  } else {
 		  $( "#message_area" ).show();
 	  }
+	  var btn_status = $("#start_move_btn_status").html();
+	  btn_status = btn_status.trim();
+	  if (btn_status != "") {
+		  $("#btn-start-move").removeAttr('disabled');
+	  }
 
 	  $("#msg-close-btn").on('click', function () {
 	      $('#message_area').html("");
