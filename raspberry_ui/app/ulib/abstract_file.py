@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, time
 
 class AbstractFile(object):
     
@@ -38,4 +38,15 @@ class AbstractFile(object):
             return ""
         content = f.read()
         f.close()
+        return content
+    
+    def wait_get_file_content(self, filename, path = "", mode = "rt", timeout_sec=1.5):
+        content = ""
+        count = 0
+        timeout = 0
+        while content == "" or timeout > timeout_sec:
+            time.sleep(0.1)
+            count = count + 1
+            timeout = 0.1*count
+            content = self.file_get_content(filename, path, mode)
         return content

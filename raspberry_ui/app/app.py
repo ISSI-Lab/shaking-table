@@ -68,14 +68,15 @@ def start_serial_thread():
 		print(serial_state, file=sys.stderr)
 		return render_template('index.html', state_info=serial_state)
 	
-	serial_status = ""
-	count = 0
-	while serial_status == "" or timeout > 1.5:
-		time.sleep(0.1)
-		count = count + 1
-		timeout = 0.1*count
-		serial_status = afile_handle.file_get_content("serial_state.cfg", afile_handle.get_data_dir(), "rt")
-	
+	serial_status = afile_handle.wait_get_file_content("serial_state.cfg", afile_handle.get_data_dir())
+ #	count = 0
+ # while serial_status == "" or timeout > 1.5:
+ # 	time.sleep(0.1)
+ # 	count = count + 1
+ # 	timeout = 0.1*count
+ # 	serial_status = afile_handle.file_get_content("serial_state.cfg", afile_handle.get_data_dir(), "rt")
+ #
+
 	#serial_status = afile_handle.file_get_content("serial_state.cfg", afile_handle.get_data_dir(), "rt")
 	print(">>>>" + serial_status, file=sys.stderr)
 
